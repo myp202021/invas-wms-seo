@@ -1,0 +1,29 @@
+name: Invas Rankings Semanal
+
+on:
+  schedule:
+    # Jueves 11:00 UTC = 08:00 AM Chile
+    - cron: '0 11 * * 4'
+  workflow_dispatch:
+
+jobs:
+  ranking:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install node-fetch@2
+
+      - name: Generate and publish ranking
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          INVAS_WP_USER: ${{ secrets.INVAS_WP_USER }}
+          INVAS_WP_APP_PASSWORD: ${{ secrets.INVAS_WP_APP_PASSWORD }}
+          INVAS_WP_URL: https://www.invaswms.com
+          RESEND: ${{ secrets.RESEND }}
+        run: node scripts/invas-rankings-semanal.js

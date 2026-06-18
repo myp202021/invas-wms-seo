@@ -1,0 +1,29 @@
+name: Invas Blog Diario
+
+on:
+  schedule:
+    # L-V 10:00 UTC = 07:00 AM Chile
+    - cron: '0 10 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  blog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install node-fetch@2
+
+      - name: Generate and publish blog post
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          INVAS_WP_USER: ${{ secrets.INVAS_WP_USER }}
+          INVAS_WP_APP_PASSWORD: ${{ secrets.INVAS_WP_APP_PASSWORD }}
+          INVAS_WP_URL: https://www.invaswms.com
+          RESEND: ${{ secrets.RESEND }}
+        run: node scripts/invas-blog-diario.js

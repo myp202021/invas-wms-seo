@@ -81,6 +81,37 @@ var TEMAS = [
   { titulo: 'Guía paso a paso: cómo implementar un WMS en menos de 30 días', categoria: 'Guías', keywords: 'implementar WMS, guía implementación WMS, WMS rápido', tipo: 'guía' },
   { titulo: 'Capacitación de equipos en WMS: mejores prácticas', categoria: 'Guías', keywords: 'capacitación WMS, entrenar equipo WMS, adopción tecnología', tipo: 'guía' },
   { titulo: 'Migración de WMS: cómo cambiar de sistema sin perder datos', categoria: 'Guías', keywords: 'migración WMS, cambiar sistema WMS, migrar datos almacén', tipo: 'guía' },
+
+  // === PILARES CAMILA (jun 2026) — FAQ, B2B, industria, geo ===
+
+  // FAQ Estructurado (SEO quick wins)
+  { titulo: 'FAQ: ¿Cuánto cuesta implementar un WMS en Chile?', categoria: 'FAQ', keywords: 'cuánto cuesta WMS Chile, precio WMS, costo implementación WMS', tipo: 'faq' },
+  { titulo: 'FAQ: ¿Qué es un WMS y cómo se diferencia de un ERP?', categoria: 'FAQ', keywords: 'qué es WMS, diferencia WMS ERP, sistema gestión almacenes', tipo: 'faq' },
+  { titulo: 'FAQ: ¿Cuánto tiempo toma implementar un WMS?', categoria: 'FAQ', keywords: 'tiempo implementación WMS, plazo WMS, implementar WMS rápido', tipo: 'faq' },
+  { titulo: 'FAQ: ¿Un WMS se integra con mi ERP actual?', categoria: 'FAQ', keywords: 'integración WMS ERP, WMS compatible SAP, WMS API integración', tipo: 'faq' },
+  { titulo: 'FAQ: ¿Qué ROI puedo esperar de un WMS en el primer año?', categoria: 'FAQ', keywords: 'ROI WMS primer año, retorno inversión WMS, ahorro WMS', tipo: 'faq' },
+  { titulo: 'FAQ: ¿WMS cloud o WMS on-premise para mi operación?', categoria: 'FAQ', keywords: 'WMS cloud vs on premise, WMS nube, WMS servidor local', tipo: 'faq' },
+
+  // Contenido B2B — Comité de compras
+  { titulo: 'Guía para gerentes: cómo justificar la inversión en WMS ante directorio', categoria: 'B2B', keywords: 'justificar inversión WMS, business case WMS, presentar WMS directorio', tipo: 'guía' },
+  { titulo: 'Checklist para evaluar proveedores de WMS en Chile', categoria: 'B2B', keywords: 'evaluar WMS Chile, checklist proveedor WMS, comparar WMS', tipo: 'guía' },
+  { titulo: 'Cómo armar un RFP para seleccionar tu WMS', categoria: 'B2B', keywords: 'RFP WMS, request for proposal WMS, licitación WMS', tipo: 'guía' },
+  { titulo: 'WMS para CFOs: métricas financieras que importan', categoria: 'B2B', keywords: 'WMS métricas financieras, CFO logística, costo por línea despachada', tipo: 'educativo' },
+  { titulo: 'WMS para gerentes de operaciones: KPIs que debes monitorear', categoria: 'B2B', keywords: 'KPIs operaciones WMS, gerente operaciones logística, indicadores bodega', tipo: 'educativo' },
+
+  // Industrias expandidas (polos logísticos regionales)
+  { titulo: 'WMS para la industria minera: gestión de bodegas en faenas remotas', categoria: 'Industria', keywords: 'WMS minería, bodega faena minera, gestión almacén minería Chile', tipo: 'industria' },
+  { titulo: 'WMS para distribuidoras farmacéuticas: trazabilidad y cadena de frío', categoria: 'Industria', keywords: 'WMS farmacéutica, trazabilidad medicamentos, cadena frío farmacia', tipo: 'industria' },
+  { titulo: 'WMS para centros de distribución portuarios: Valparaíso y San Antonio', categoria: 'Industria', keywords: 'WMS portuario, centro distribución Valparaíso, logística San Antonio', tipo: 'industria' },
+  { titulo: 'WMS para zonas francas: gestión logística en Iquique y Punta Arenas', categoria: 'Industria', keywords: 'WMS zona franca, logística Iquique, almacén Punta Arenas', tipo: 'industria' },
+  { titulo: 'WMS para agroindustria: trazabilidad de exportaciones frutícolas', categoria: 'Industria', keywords: 'WMS agroindustria, trazabilidad fruta exportación, logística agrícola Chile', tipo: 'industria' },
+  { titulo: 'Logística en Antofagasta: desafíos del almacenamiento minero e industrial', categoria: 'Industria', keywords: 'logística Antofagasta, almacén minero, WMS norte Chile', tipo: 'industria' },
+  { titulo: 'Hubs logísticos del Biobío: oportunidades para WMS en la zona sur', categoria: 'Industria', keywords: 'logística Biobío, hub logístico Concepción, WMS sur Chile', tipo: 'industria' },
+
+  // Operaciones avanzadas
+  { titulo: 'Voice picking y WMS: cómo funciona la preparación por voz', categoria: 'Operaciones', keywords: 'voice picking, picking por voz, WMS voz almacén', tipo: 'educativo' },
+  { titulo: 'WMS y WhatsApp: notificaciones de despacho en tiempo real', categoria: 'Operaciones', keywords: 'WMS WhatsApp, notificación despacho, alertas logísticas', tipo: 'educativo' },
+  { titulo: 'Cómo reducir el costo por línea despachada con un WMS', categoria: 'Operaciones', keywords: 'costo por línea despachada, eficiencia despacho, reducir costos logísticos', tipo: 'educativo' },
 ]
 
 // ═══════════════════════════════════════════
@@ -231,7 +262,7 @@ async function notificarEmail(articulo, postUrl) {
       headers: { 'Authorization': 'Bearer ' + RESEND_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from: 'M&P SEO <contacto@mulleryperez.cl>',
-        to: ['contacto@mulleryperez.cl'],
+        to: ['contacto@mulleryperez.cl', 'jvio@impruvex.com', 'cvilo@impruvex.com'],
         subject: '📝 Blog invasWMS: ' + articulo.titulo_seo,
         html: '<div style="font-family:sans-serif;max-width:500px">'
           + '<h2 style="color:#1a1a2e">Nuevo artículo publicado en invasWMS</h2>'
@@ -292,7 +323,7 @@ async function main() {
 
     // 6. Notificar
     await notificarEmail(articulo, postUrl)
-    console.log('   Email: enviado a contacto@mulleryperez.cl')
+    console.log('   Email: enviado a contacto@mulleryperez.cl + jvio + cvilo@impruvex.com')
 
     // Outputs para GitHub Actions
     console.log('\n::set-output name=title::' + articulo.titulo_seo)
