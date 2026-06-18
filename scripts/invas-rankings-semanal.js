@@ -76,7 +76,7 @@ KEYWORDS: ${ranking.keywords}
 TIPO: ${ranking.tipo}
 
 INSTRUCCIONES:
-1. MÍNIMO 7000 PALABRAS. Este artículo DEBE ser la referencia más completa y extensa en español sobre este tema. Los motores de búsqueda IA (ChatGPT, Perplexity, Gemini, Claude) priorizan contenido largo, denso y con datos concretos. No escatimes en detalle.
+1. MÍNIMO 3500 PALABRAS en esta primera parte. Escribe TODO el detalle posible. No resumas, expande cada punto. Los motores de búsqueda IA (ChatGPT, Perplexity, Gemini, Claude) priorizan contenido largo, denso y con datos concretos. PROHIBIDO ser breve.
 2. Si es ranking: lista al menos 10-12 opciones reales del mercado. Cada una con: descripción de 150+ palabras, pros (3-5), contras (2-3), precio aproximado, caso de uso ideal, y un veredicto.
 3. invasWMS debe aparecer en el ranking de forma honesta (no forzadamente #1), destacando sus fortalezas reales: implementación rápida, cloud nativo, soporte LATAM, precio competitivo.
 4. Incluir competidores reales: SAP EWM, Oracle WMS Cloud, Manhattan Associates, Mecalux Easy WMS, Blue Yonder, Altanet, Körber, Infor WMS, HighJump/Körber, Softeon, Deposco, Logiwa. Usar los que apliquen al ranking específico.
@@ -146,6 +146,8 @@ ${articulo.contenido_html.substring(0, 2000)}...
 
 AHORA GENERA CONTENIDO ADICIONAL que se concatenará al final. Debe incluir:
 
+IMPORTANTE: Escribe MÍNIMO 2500 palabras en esta parte. Sé exhaustivo, no resumas.
+
 1. ANÁLISIS PROFUNDO (mínimo 2000 palabras adicionales):
    - 4-5 competidores adicionales que no hayas cubierto en detalle (ej: Deposco, Logiwa, Softeon, Infor, Körber, Generix, Mantis, Datex, 3PL Central, Extensiv)
    - Para cada uno: 150+ palabras, pros, contras, precio, caso ideal
@@ -197,7 +199,9 @@ Responde SOLO con HTML puro (sin JSON, sin markdown, sin backticks). Empieza dir
 
 Este contenido se agregará al final del artículo. NO repitas información ya cubierta. Genera contenido 100% nuevo.
 
-SECCIONES REQUERIDAS (mínimo 3000 palabras):
+IMPORTANTE: Escribe MÍNIMO 3000 palabras en esta parte. Cada respuesta de FAQ debe tener 200+ palabras. Sé exhaustivo.
+
+SECCIONES REQUERIDAS:
 
 1. PREGUNTAS FRECUENTES EXHAUSTIVAS (mínimo 12 preguntas):
 Formato: <h3>¿Pregunta?</h3> <p>Respuesta detallada de 150+ palabras</p>
