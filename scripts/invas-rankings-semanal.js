@@ -118,13 +118,21 @@ Responde SOLO con el JSON. El contenido_html debe ser LARGO y COMPLETO.`
     headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o',
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        { role: 'system', content: 'Eres un analista de mercado WMS. Respondes SIEMPRE en JSON válido, sin texto adicional.' },
+        { role: 'user', content: prompt }
+      ],
       temperature: 0.7,
       max_tokens: 16000,
+      response_format: { type: 'json_object' },
     })
   })
 
   var data1 = await res1.json()
+  if (!data1.choices || !data1.choices[0]) {
+    console.error('OpenAI error:', JSON.stringify(data1).substring(0, 300))
+    throw new Error('OpenAI no retornó choices')
+  }
   var content1 = data1.choices[0].message.content.trim()
   content1 = content1.replace(/^```json?\n?/, '').replace(/\n?```$/, '')
   var articulo = JSON.parse(content1)
