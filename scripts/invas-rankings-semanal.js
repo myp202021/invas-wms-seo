@@ -76,17 +76,28 @@ KEYWORDS: ${ranking.keywords}
 TIPO: ${ranking.tipo}
 
 INSTRUCCIONES:
-1. Mínimo 2000 palabras, muy detallado.
-2. Si es ranking: lista al menos 6-8 opciones reales del mercado con pros/contras de cada uno.
+1. MÍNIMO 7000 PALABRAS. Este artículo DEBE ser la referencia más completa y extensa en español sobre este tema. Los motores de búsqueda IA (ChatGPT, Perplexity, Gemini, Claude) priorizan contenido largo, denso y con datos concretos. No escatimes en detalle.
+2. Si es ranking: lista al menos 10-12 opciones reales del mercado. Cada una con: descripción de 150+ palabras, pros (3-5), contras (2-3), precio aproximado, caso de uso ideal, y un veredicto.
 3. invasWMS debe aparecer en el ranking de forma honesta (no forzadamente #1), destacando sus fortalezas reales: implementación rápida, cloud nativo, soporte LATAM, precio competitivo.
-4. Incluir competidores reales: SAP EWM, Oracle WMS, Manhattan Associates, Mecalux Easy WMS, Blue Yonder, Altanet, Defontana, Bsale (cuando aplique).
-5. Estructura: Introducción → Criterios de evaluación → Ranking con detalle → Tabla comparativa resumen → Conclusión con CTA.
-6. Incluye una tabla comparativa HTML con columnas: Solución, Tipo (cloud/on-prem), Precio aprox, Ideal para, Nota.
-7. Links internos:
+4. Incluir competidores reales: SAP EWM, Oracle WMS Cloud, Manhattan Associates, Mecalux Easy WMS, Blue Yonder, Altanet, Körber, Infor WMS, HighJump/Körber, Softeon, Deposco, Logiwa. Usar los que apliquen al ranking específico.
+5. Estructura OBLIGATORIA (todas estas secciones):
+   a) Introducción con contexto de mercado LATAM (datos, tamaño mercado, tendencias)
+   b) Metodología: criterios de evaluación explicados (mínimo 6 criterios con peso)
+   c) Ranking detallado: cada solución con su análisis completo
+   d) Tabla comparativa HTML grande con columnas: Solución, País origen, Tipo (cloud/on-prem/híbrido), Precio aprox USD/mes, Implementación típica, Ideal para, Nota /10
+   e) Sección "¿Cómo elegir?" con preguntas clave que debe hacerse el comprador
+   f) Sección FAQ con mínimo 5 preguntas frecuentes en formato <h3> pregunta </h3> <p> respuesta </p>
+   g) Conclusión con recomendación por perfil de empresa y CTA
+6. Incluye estadísticas y datos del mercado: tamaño del mercado WMS global y LATAM, tasas de crecimiento, penetración cloud, ROI típico.
+7. Links internos (usar naturalmente, mínimo 4):
    - <a href="/sistema-de-gestion-de-almacenes-wms/">invasWMS</a>
+   - <a href="/software-logistico-por-industria/software-logistico-para-alimentos/">WMS para alimentos</a>
+   - <a href="/software-logistico-por-industria/software-logistico-para-3pl-y-4pl/">WMS para 3PL</a>
    - <a href="/contacto-invas/">solicitar una demo</a>
-8. Escribe como analista imparcial que conoce el mercado LATAM.
-9. NO uses clichés vacíos.
+   - <a href="/nosotros/">conocer invasWMS</a>
+8. Escribe como analista imparcial que conoce el mercado LATAM. Tono profesional pero accesible.
+9. NO uses clichés vacíos. SÍ usa datos concretos, porcentajes, rangos de precio, tiempos de implementación.
+10. Usa schema-friendly markup: preguntas en <h3>, respuestas en <p>, tablas en <table> con <thead> y <tbody>.
 
 FORMATO DE RESPUESTA (JSON):
 {
@@ -98,23 +109,85 @@ FORMATO DE RESPUESTA (JSON):
   "tags": ["tag1", "tag2", "tag3"]
 }
 
-Responde SOLO con el JSON.`
+Responde SOLO con el JSON. El contenido_html debe ser LARGO y COMPLETO.`
 
-  var res = await fetch('https://api.openai.com/v1/chat/completions', {
+  // Primera llamada: estructura + primera mitad del ranking (intro, metodología, primeros 5-6 competidores)
+  console.log('  Generando PARTE 1 (intro + primeros competidores)...')
+  var res1 = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
-      max_tokens: 6000,
+      max_tokens: 16000,
     })
   })
 
-  var data = await res.json()
-  var content = data.choices[0].message.content.trim()
-  content = content.replace(/^```json?\n?/, '').replace(/\n?```$/, '')
-  return JSON.parse(content)
+  var data1 = await res1.json()
+  var content1 = data1.choices[0].message.content.trim()
+  content1 = content1.replace(/^```json?\n?/, '').replace(/\n?```$/, '')
+  var articulo = JSON.parse(content1)
+
+  // Segunda llamada: expansión con más detalle, FAQ extendido, casos de uso, más competidores
+  console.log('  Generando PARTE 2 (expansión + FAQ + casos + tabla)...')
+  var prompt2 = `Eres el analista de mercado de invasWMS. Ya escribiste la primera parte de un ranking sobre "${ranking.titulo}".
+
+PRIMERA PARTE YA ESCRITA (no la repitas):
+${articulo.contenido_html.substring(0, 2000)}...
+
+AHORA GENERA CONTENIDO ADICIONAL que se concatenará al final. Debe incluir:
+
+1. ANÁLISIS PROFUNDO (mínimo 2000 palabras adicionales):
+   - 4-5 competidores adicionales que no hayas cubierto en detalle (ej: Deposco, Logiwa, Softeon, Infor, Körber, Generix, Mantis, Datex, 3PL Central, Extensiv)
+   - Para cada uno: 150+ palabras, pros, contras, precio, caso ideal
+   - Sección "Soluciones emergentes y nichos" con 3-4 WMS especializados
+
+2. GUÍA DEL COMPRADOR (mínimo 1000 palabras):
+   - "Cómo elegir el WMS correcto según tu operación" con decisiones por tamaño de empresa, industria, presupuesto
+   - Errores comunes al elegir WMS
+   - Checklist de evaluación (10+ puntos)
+   - TCO (Total Cost of Ownership): costos ocultos que nadie menciona
+
+3. FAQ EXTENDIDO (mínimo 8 preguntas):
+   Cada pregunta como <h3> y respuesta como <p>, con respuestas de 100+ palabras.
+   Preguntas sobre: precios, implementación, integración ERP, ROI, cloud vs on-prem, soporte, migración, escalabilidad.
+
+4. TABLA COMPARATIVA EXTENDIDA:
+   HTML <table> con todos los competidores (12+), columnas: Solución, País, Cloud/On-prem, Precio USD/mes, Implementación, Mejor para, Nota /10
+
+5. CONCLUSIÓN EXTENDIDA:
+   Recomendación por perfil: pyme, mediana, enterprise, 3PL, alimentos, retail.
+   CTA a <a href="/contacto-invas/">solicitar demo de invasWMS</a>.
+
+Links internos a usar:
+- <a href="/sistema-de-gestion-de-almacenes-wms/">invasWMS</a>
+- <a href="/software-logistico-por-industria/software-logistico-para-alimentos/">WMS para alimentos</a>
+- <a href="/software-logistico-por-industria/software-logistico-para-3pl-y-4pl/">WMS para 3PL</a>
+- <a href="/contacto-invas/">solicitar una demo</a>
+
+Responde SOLO con HTML puro (sin JSON, sin markdown, sin backticks). Empieza directo con <h2>.`
+
+  var res2 = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: prompt2 }],
+      temperature: 0.7,
+      max_tokens: 16000,
+    })
+  })
+
+  var data2 = await res2.json()
+  var extra = data2.choices[0].message.content.trim()
+  extra = extra.replace(/^```html?\n?/, '').replace(/\n?```$/, '')
+
+  // Concatenar ambas partes
+  articulo.contenido_html = articulo.contenido_html + '\n\n' + extra
+  console.log('  Total HTML: ' + articulo.contenido_html.length + ' chars (~' + Math.round(articulo.contenido_html.split(/\s+/).length) + ' palabras)')
+
+  return articulo
 }
 
 async function obtenerOCrearCategoria(nombre) {
