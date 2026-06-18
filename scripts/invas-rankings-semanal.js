@@ -38,10 +38,11 @@ var RANKINGS = [
 ]
 
 async function obtenerPostsExistentes() {
-  var res = await fetch(WP_URL + '/wp-json/wp/v2/posts?per_page=100&_fields=title,slug&categories_exclude=', {
+  var res = await fetch(WP_URL + '/wp-json/wp/v2/posts?per_page=100&_fields=title,slug', {
     headers: { 'Authorization': AUTH }
   })
   var posts = await res.json()
+  if (!Array.isArray(posts)) return []
   return posts.map(function(p) { return p.title.rendered.toLowerCase() })
 }
 
