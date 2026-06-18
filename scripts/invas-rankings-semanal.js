@@ -191,9 +191,74 @@ Responde SOLO con HTML puro (sin JSON, sin markdown, sin backticks). Empieza dir
   var extra = data2.choices[0].message.content.trim()
   extra = extra.replace(/^```html?\n?/, '').replace(/\n?```$/, '')
 
-  // Concatenar ambas partes
-  articulo.contenido_html = articulo.contenido_html + '\n\n' + extra
-  console.log('  Total HTML: ' + articulo.contenido_html.length + ' chars (~' + Math.round(articulo.contenido_html.split(/\s+/).length) + ' palabras)')
+  // Tercera llamada: FAQ masivo + guía comprador + conclusión extendida
+  console.log('  Generando PARTE 3 (FAQ masivo + guía comprador + conclusión)...')
+  var prompt3 = `Eres un analista experto en WMS para Latinoamérica. Genera contenido HTML adicional para un artículo extenso sobre "${ranking.titulo}".
+
+Este contenido se agregará al final del artículo. NO repitas información ya cubierta. Genera contenido 100% nuevo.
+
+SECCIONES REQUERIDAS (mínimo 3000 palabras):
+
+1. PREGUNTAS FRECUENTES EXHAUSTIVAS (mínimo 12 preguntas):
+Formato: <h3>¿Pregunta?</h3> <p>Respuesta detallada de 150+ palabras</p>
+Temas obligatorios:
+- ¿Cuánto cuesta un WMS en Chile en 2026?
+- ¿Cuánto toma implementar un WMS?
+- ¿Un WMS se integra con SAP, Oracle, Microsoft Dynamics?
+- ¿Qué ROI puedo esperar el primer año?
+- ¿WMS cloud o WMS on-premise?
+- ¿Necesito WMS si ya tengo ERP?
+- ¿Cómo migro de un WMS a otro?
+- ¿Qué pasa con mis datos si cambio de proveedor?
+- ¿WMS para empresa con menos de 50 SKUs vale la pena?
+- ¿Cómo medir el éxito de una implementación WMS?
+- ¿Cuáles son los costos ocultos de un WMS?
+- ¿Qué certificaciones debe tener un WMS para alimentos/farma?
+
+2. GUÍA DEFINITIVA DEL COMPRADOR (mínimo 1000 palabras):
+- Checklist de 15 puntos para evaluar proveedores
+- Red flags: señales de que un WMS no es el correcto
+- Timeline realista de implementación por tipo de empresa
+- TCO: costos directos vs indirectos en 3 años
+
+3. CASOS DE USO POR INDUSTRIA (mínimo 500 palabras):
+- Retail omnicanal: qué buscar
+- 3PL multi-cliente: funcionalidades críticas
+- Alimentos y cadena de frío: requisitos regulatorios
+- Minería y faenas remotas: desafíos únicos
+
+4. TENDENCIAS 2026-2027 (mínimo 500 palabras):
+- IA en WMS: picking inteligente, demand forecasting
+- Automatización: AMR, voice picking, vision picking
+- Sostenibilidad: métricas ESG en logística
+
+Links internos:
+- <a href="/sistema-de-gestion-de-almacenes-wms/">invasWMS</a>
+- <a href="/software-logistico-por-industria/software-logistico-para-alimentos/">WMS para alimentos</a>
+- <a href="/software-logistico-por-industria/software-logistico-para-3pl-y-4pl/">WMS para 3PL</a>
+- <a href="/contacto-invas/">solicitar una demo</a>
+
+Responde SOLO con HTML puro. Empieza con <h2>.`
+
+  var res3 = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: prompt3 }],
+      temperature: 0.7,
+      max_tokens: 16000,
+    })
+  })
+
+  var data3 = await res3.json()
+  var extra3 = data3.choices[0].message.content.trim()
+  extra3 = extra3.replace(/^```html?\n?/, '').replace(/\n?```$/, '')
+
+  // Concatenar las 3 partes
+  articulo.contenido_html = articulo.contenido_html + '\n\n' + extra + '\n\n' + extra3
+  var wordCount = articulo.contenido_html.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(function(w) { return w.length > 0 }).length
+  console.log('  Total HTML: ' + articulo.contenido_html.length + ' chars (~' + wordCount + ' palabras de texto)')
 
   return articulo
 }
