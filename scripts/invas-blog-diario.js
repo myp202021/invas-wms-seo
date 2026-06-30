@@ -6,7 +6,7 @@
 // Uso: node scripts/invas-blog-diario.js
 // Requiere: OPENAI_API_KEY, INVAS_WP_USER, INVAS_WP_APP_PASSWORD, INVAS_WP_URL
 
-var fetch = require('node-fetch')
+var fetch = globalThis.fetch || require('node-fetch')
 
 var WP_URL = process.env.INVAS_WP_URL || 'https://www.invaswms.com'
 var WP_USER = process.env.INVAS_WP_USER || 'Ad-invas-miN'

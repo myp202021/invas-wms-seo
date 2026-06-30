@@ -3,7 +3,7 @@
 // Usa RankMath API (updateMeta endpoint)
 // Uso: node scripts/invas-seo-meta.js
 
-var fetch = require('node-fetch')
+var fetch = globalThis.fetch || require('node-fetch')
 
 var WP_URL = process.env.INVAS_WP_URL || 'https://www.invaswms.com'
 var WP_USER = process.env.INVAS_WP_USER || 'Ad-invas-miN'
