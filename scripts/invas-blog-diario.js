@@ -336,6 +336,103 @@ async function notificarEmail(articulo, postUrl) {
 }
 
 // ═══════════════════════════════════════════
+// REGENERAR PÁGINA BLOG (ID 6149)
+// ═══════════════════════════════════════════
+var BLOG_PAGE_ID = 6149
+
+async function regenerarPaginaBlog() {
+  // Get all posts
+  var allPosts = []
+  for (var pg = 1; pg <= 5; pg++) {
+    var res = await fetch(WP_URL + '/wp-json/wp/v2/posts?per_page=100&status=publish&_fields=id,title,link,featured_media,categories,date&page=' + pg, {
+      headers: { 'Authorization': AUTH }
+    })
+    var posts = await res.json()
+    if (!Array.isArray(posts) || !posts.length) break
+    allPosts = allPosts.concat(posts)
+  }
+
+  // Get media URLs
+  var mids = []
+  allPosts.forEach(function(p) { if (p.featured_media && mids.indexOf(p.featured_media) === -1) mids.push(p.featured_media) })
+  var mediaMap = {}
+  for (var i = 0; i < mids.length; i += 100) {
+    var batch = mids.slice(i, i + 100)
+    var mRes = await fetch(WP_URL + '/wp-json/wp/v2/media?include=' + batch.join(',') + '&per_page=100&_fields=id,source_url', {
+      headers: { 'Authorization': AUTH }
+    })
+    var medias = await mRes.json()
+    medias.forEach(function(m) { mediaMap[m.id] = m.source_url })
+  }
+
+  // Get categories
+  var catRes = await fetch(WP_URL + '/wp-json/wp/v2/categories?per_page=100&_fields=id,name,slug,count,link', {
+    headers: { 'Authorization': AUTH }
+  })
+  var cats = await catRes.json()
+  var mainCats = cats.filter(function(c) {
+    return c.count > 0 && ['uncategorized','uncategorized-en','sin-categoria','technical-documents','success-stories','news'].indexOf(c.slug) === -1
+  }).sort(function(a, b) { return b.count - a.count })
+
+  // Build HTML
+  var html = '<style>.bh{background:linear-gradient(135deg,#0a1628,#1a365d,#0a1628);padding:50px 30px;text-align:center;border-radius:12px;margin-bottom:32px}.bh h1{color:#fff;font-size:36px;font-weight:800;margin:0 0 12px}.bh p{color:rgba(255,255,255,.6);font-size:16px;margin:0 auto;max-width:550px}.bf{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:36px}.bf a{padding:7px 18px;background:#edf2f7;color:#1a365d;border-radius:20px;text-decoration:none;font-size:13px;font-weight:600;transition:all .2s}.bf a:hover{background:#3182ce;color:#fff}.bs h2{font-size:24px;font-weight:700;color:#1a365d;margin:40px 0 20px;padding-bottom:10px;border-bottom:3px solid #3182ce}.bg{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-bottom:24px}.bc{text-decoration:none;display:block;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.07);transition:transform .2s,box-shadow .2s}.bc:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.12)}.bc img{width:100%;height:180px;object-fit:cover}.bc h3{font-size:15px;font-weight:700;color:#1a202c;margin:0;line-height:1.4;padding:16px}.ct{background:linear-gradient(135deg,#1a365d,#2b6cb0);padding:40px;text-align:center;border-radius:12px;margin-top:40px}.ct h2{color:#fff;font-size:24px;margin:0 0 10px}.ct p{color:rgba(255,255,255,.6);margin:0 0 20px}.ct a{display:inline-block;padding:12px 28px;background:#fff;color:#1a365d;font-weight:700;border-radius:8px;text-decoration:none}</style>'
+
+  html += '<div class="bh"><h1>Blog invasWMS</h1><p>Artículos, guías, casos de éxito y FAQ sobre gestión de almacenes y logística</p></div>'
+  html += '<div class="bf">'
+  mainCats.forEach(function(c) { html += '<a href="' + c.link + '">' + c.name + ' (' + c.count + ')</a>' })
+  html += '</div>'
+
+  var sections = [
+    { name: 'Casos de Éxito', ids: [53] },
+    { name: 'Preguntas Frecuentes', ids: [112] },
+    { name: 'Rankings y Comparativas', ids: [94, 108] },
+    { name: 'Industrias', ids: [92] },
+    { name: 'Tendencias', ids: [100] },
+    { name: 'Operaciones', ids: [102] },
+    { name: 'Guías y Documentos', ids: [57, 98, 96, 110, 104, 106] },
+  ]
+
+  var used = {}
+  html += '<div class="bs">'
+  sections.forEach(function(sec) {
+    var sp = allPosts.filter(function(p) {
+      if (used[p.id]) return false
+      return p.categories.some(function(c) { return sec.ids.indexOf(c) !== -1 })
+    })
+    if (!sp.length) return
+    sp.forEach(function(p) { used[p.id] = true })
+    html += '<h2>' + sec.name + '</h2><div class="bg">'
+    sp.forEach(function(p) {
+      var img = mediaMap[p.featured_media] || ''
+      html += '<a class="bc" href="' + p.link + '">'
+      if (img) html += '<img src="' + img + '" alt="' + (p.title.rendered || '').replace(/"/g, '&quot;') + '" loading="lazy">'
+      html += '<h3>' + p.title.rendered + '</h3></a>'
+    })
+    html += '</div>'
+  })
+  var rem = allPosts.filter(function(p) { return !used[p.id] })
+  if (rem.length) {
+    html += '<h2>Más artículos</h2><div class="bg">'
+    rem.forEach(function(p) {
+      var img = mediaMap[p.featured_media] || ''
+      html += '<a class="bc" href="' + p.link + '">'
+      if (img) html += '<img src="' + img + '" alt="' + (p.title.rendered || '').replace(/"/g, '&quot;') + '" loading="lazy">'
+      html += '<h3>' + p.title.rendered + '</h3></a>'
+    })
+    html += '</div>'
+  }
+  html += '</div>'
+  html += '<div class="ct"><h2>¿Listo para optimizar tu almacén?</h2><p>Agenda una demo personalizada</p><a href="/contacto-invas/">Solicitar demo →</a></div>'
+
+  // Update page
+  await fetch(WP_URL + '/wp-json/wp/v2/pages/' + BLOG_PAGE_ID, {
+    method: 'POST',
+    headers: { 'Authorization': AUTH, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: html })
+  })
+}
+
+// ═══════════════════════════════════════════
 // MAIN
 // ═══════════════════════════════════════════
 async function main() {
@@ -383,6 +480,11 @@ async function main() {
     // 6. Notificar
     await notificarEmail(articulo, postUrl)
     console.log('   Email: enviado a contacto@mulleryperez.cl + jvio + cvilo@impruvex.com')
+
+    // 7. Regenerar página /todos-los-articulos/ (ID 6149)
+    console.log('\n   Regenerando página de blog...')
+    await regenerarPaginaBlog()
+    console.log('   ✅ Página /todos-los-articulos/ actualizada')
 
     // Outputs para GitHub Actions
     console.log('\n::set-output name=title::' + articulo.titulo_seo)
