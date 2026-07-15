@@ -235,18 +235,28 @@ async function generarImagenDestacada(titulo) {
     var res = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'dall-e-3', prompt: prompt, n: 1, size: '1792x1024', quality: 'standard' })
+      body: JSON.stringify({ model: 'gpt-image-1', prompt: prompt, n: 1, size: '1536x1024', quality: 'low' })
     })
     var data = await res.json()
-    if (data.data && data.data[0]) return data.data[0].url
+    if (data.data && data.data[0]) {
+      var b64 = data.data[0].b64_json
+      var url = data.data[0].url
+      if (b64) return { type: 'b64', data: b64 }
+      if (url) return { type: 'url', data: url }
+    }
   } catch (e) { console.log('  ⚠️ Error generando imagen: ' + e.message) }
   return null
 }
 
-async function subirImagenAWordPress(imageUrl, titulo) {
+async function subirImagenAWordPress(imageData, titulo) {
   try {
-    var imgRes = await fetch(imageUrl)
-    var imgBuffer = Buffer.from(await imgRes.arrayBuffer())
+    var imgBuffer
+    if (imageData.type === 'b64') {
+      imgBuffer = Buffer.from(imageData.data, 'base64')
+    } else {
+      var imgRes = await fetch(imageData.data)
+      imgBuffer = Buffer.from(await imgRes.arrayBuffer())
+    }
     var slug = titulo.substring(0, 50).toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -271,9 +281,9 @@ async function publicarEnWordPress(articulo) {
   // Generar y subir imagen destacada
   var featuredMedia = 0
   console.log('  Generando imagen destacada...')
-  var imageUrl = await generarImagenDestacada(articulo.titulo_seo)
-  if (imageUrl) {
-    var mediaId = await subirImagenAWordPress(imageUrl, articulo.titulo_seo)
+  var imageData = await generarImagenDestacada(articulo.titulo_seo)
+  if (imageData) {
+    var mediaId = await subirImagenAWordPress(imageData, articulo.titulo_seo)
     if (mediaId) {
       featuredMedia = mediaId
       console.log('  ✅ Imagen generada y subida (media ' + mediaId + ')')
