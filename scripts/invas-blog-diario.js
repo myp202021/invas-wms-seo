@@ -54,9 +54,9 @@ var TEMAS = [
   { titulo: 'Robótica y WMS: cómo trabajan juntos en el almacén del futuro', categoria: 'Tendencias', keywords: 'robótica almacén, robots WMS, automatización logística', tipo: 'tendencia' },
   { titulo: 'La cadena de suministro post-pandemia: lecciones para Latinoamérica', categoria: 'Tendencias', keywords: 'cadena suministro post pandemia, resiliencia supply chain', tipo: 'tendencia' },
 
-  // Casos y datos
-  { titulo: 'Caso de éxito: cómo aumentar 400% la capacidad de despacho en 30 días', categoria: 'Casos', keywords: 'caso éxito WMS, aumentar capacidad despacho, implementación rápida', tipo: 'caso' },
-  { titulo: 'Caso de éxito: reducción de 60% en tiempo de picking con WMS', categoria: 'Casos', keywords: 'caso éxito picking, reducir tiempo picking, eficiencia WMS', tipo: 'caso' },
+  // Casos y datos — NOTA: NO generar casos de éxito genéricos sin empresa real.
+  // Los casos de éxito se publican manualmente con datos verificados del cliente.
+  // Temas de datos/benchmark sí se pueden generar automáticamente:
   { titulo: 'Benchmark logístico Chile 2026: costos, tiempos y eficiencia', categoria: 'Datos', keywords: 'benchmark logístico Chile, costos logísticos 2026, eficiencia almacén', tipo: 'datos' },
   { titulo: 'El mercado WMS en Latinoamérica: tamaño, players y proyecciones', categoria: 'Datos', keywords: 'mercado WMS Latinoamérica, industria WMS, software logístico mercado', tipo: 'datos' },
 
@@ -167,7 +167,7 @@ TIPO: ${tema.tipo}
 
 INSTRUCCIONES:
 1. Escribe en español profesional pero accesible. No uses jerga innecesaria.
-2. Mínimo 1500 palabras, máximo 2500.
+2. Mínimo 2500 palabras, máximo 3500. Artículos largos y completos.
 3. Estructura con H2 (mínimo 5 secciones) y H3 donde aplique.
 4. Incluye datos concretos, estadísticas del mercado WMS y ejemplos reales.
 5. Menciona invasWMS de forma natural 2-3 veces (no más), como solución relevante.
@@ -200,7 +200,7 @@ Responde SOLO con el JSON, sin texto adicional.`
       model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
-      max_tokens: 4000,
+      max_tokens: 6000,
     })
   })
 
@@ -229,8 +229,56 @@ async function obtenerOCrearCategoria(nombre) {
   return cat.id
 }
 
+async function generarImagenDestacada(titulo) {
+  var prompt = 'Professional photograph of a modern warehouse or logistics center related to: ' + titulo.substring(0, 100) + '. Clean, well-lit industrial space with organized shelving, automated systems, or workers with tablets. Corporate style, no text overlay, no logos, no watermarks.'
+  try {
+    var res = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'dall-e-3', prompt: prompt, n: 1, size: '1792x1024', quality: 'standard' })
+    })
+    var data = await res.json()
+    if (data.data && data.data[0]) return data.data[0].url
+  } catch (e) { console.log('  ⚠️ Error generando imagen: ' + e.message) }
+  return null
+}
+
+async function subirImagenAWordPress(imageUrl, titulo) {
+  try {
+    var imgRes = await fetch(imageUrl)
+    var imgBuffer = Buffer.from(await imgRes.arrayBuffer())
+    var slug = titulo.substring(0, 50).toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    var res = await fetch(WP_URL + '/wp-json/wp/v2/media', {
+      method: 'POST',
+      headers: {
+        'Authorization': AUTH,
+        'Content-Disposition': 'attachment; filename="blog-' + slug + '.png"',
+        'Content-Type': 'image/png',
+      },
+      body: imgBuffer,
+    })
+    var media = await res.json()
+    if (media.id) return media.id
+  } catch (e) { console.log('  ⚠️ Error subiendo imagen: ' + e.message) }
+  return null
+}
+
 async function publicarEnWordPress(articulo) {
   var catId = await obtenerOCrearCategoria(articulo.categoria)
+
+  // Generar y subir imagen destacada
+  var featuredMedia = 0
+  console.log('  Generando imagen destacada...')
+  var imageUrl = await generarImagenDestacada(articulo.titulo_seo)
+  if (imageUrl) {
+    var mediaId = await subirImagenAWordPress(imageUrl, articulo.titulo_seo)
+    if (mediaId) {
+      featuredMedia = mediaId
+      console.log('  ✅ Imagen generada y subida (media ' + mediaId + ')')
+    }
+  }
 
   var res = await fetch(WP_URL + '/wp-json/wp/v2/posts', {
     method: 'POST',
@@ -242,6 +290,7 @@ async function publicarEnWordPress(articulo) {
       excerpt: articulo.extracto,
       status: 'publish',
       categories: [catId],
+      featured_media: featuredMedia,
       meta: {
         rank_math_title: articulo.titulo_seo + ' | invasWMS Blog',
         rank_math_description: articulo.meta_description,

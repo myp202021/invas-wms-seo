@@ -1,0 +1,19 @@
+name: Fix Blog — Agregar imágenes faltantes
+on:
+  workflow_dispatch:
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/fix-blog-posts.js
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          INVAS_WP_USER: ${{ secrets.INVAS_WP_USER }}
+          INVAS_WP_APP_PASSWORD: ${{ secrets.INVAS_WP_APP_PASSWORD }}
+          INVAS_WP_URL: https://www.invaswms.com
