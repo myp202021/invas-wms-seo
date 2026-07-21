@@ -278,17 +278,9 @@ async function subirImagenAWordPress(imageData, titulo) {
 async function publicarEnWordPress(articulo) {
   var catId = await obtenerOCrearCategoria(articulo.categoria)
 
-  // Generar y subir imagen destacada
+  // Imagen destacada desactivada — las imágenes DALL-E no son atingentes al contenido.
+  // Los casos de éxito (publicados manualmente) sí llevan imagen real.
   var featuredMedia = 0
-  console.log('  Generando imagen destacada...')
-  var imageData = await generarImagenDestacada(articulo.titulo_seo)
-  if (imageData) {
-    var mediaId = await subirImagenAWordPress(imageData, articulo.titulo_seo)
-    if (mediaId) {
-      featuredMedia = mediaId
-      console.log('  ✅ Imagen generada y subida (media ' + mediaId + ')')
-    }
-  }
 
   var res = await fetch(WP_URL + '/wp-json/wp/v2/posts', {
     method: 'POST',
