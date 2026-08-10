@@ -147,10 +147,7 @@ function seleccionarTema(existentes) {
   return disponibles[Math.floor(Math.random() * disponibles.length)]
 }
 
-async function generarArticulo(tema) {
-  var prompt = `Eres el content manager de invasWMS, un software WMS (Warehouse Management System) 100% en la nube para Latinoamérica. Genera un artículo de blog profesional.
-
-DATOS DE invasWMS para mencionar naturalmente:
+var INVAS_CONTEXT = `DATOS DE invasWMS para mencionar naturalmente:
 - +700 sitios conectados en América
 - +250.000 líneas despachadas diariamente
 - +1.800 usuarios conectados
@@ -159,39 +156,58 @@ DATOS DE invasWMS para mencionar naturalmente:
 - Caso: -60% tiempo de preparación de pedidos
 - Caso: -25% errores de picking
 - Implementación en menos de 30 días
-- 100% cloud, escalable, resiliente
+- 100% cloud, escalable, resiliente`
+
+var STYLE_INSTRUCTIONS = `REGLAS DE ESTILO HTML:
+- Usa H2 y H3 con estilo inline: <h2 style="color:#1a365d;font-size:28px;margin:32px 0 16px;font-weight:700">
+- Usa H3 con estilo inline: <h3 style="color:#2d3748;font-size:20px;margin:24px 0 12px;font-weight:600">
+- Párrafos: <p style="color:#4a5568;line-height:1.8;margin-bottom:16px;font-size:16px">
+- Listas: <ul style="margin:16px 0;padding-left:24px"> con <li style="color:#4a5568;line-height:1.8;margin-bottom:8px">
+- Links internos disponibles:
+  <a href="/sistema-de-gestion-de-almacenes-wms/" style="color:#2563EB;text-decoration:underline">invasWMS</a>
+  <a href="/software-logistico-por-industria/software-logistico-para-alimentos/" style="color:#2563EB;text-decoration:underline">WMS para alimentos</a>
+  <a href="/software-logistico-por-industria/software-logistico-para-3pl-y-4pl/" style="color:#2563EB;text-decoration:underline">WMS para 3PL</a>
+  <a href="/contacto-invas/" style="color:#2563EB;text-decoration:underline">solicitar una demo</a>
+- NO uses frases como "en el vertiginoso mundo", "sinergia", "potenciar", "apalancarse".
+- Escribe en español profesional pero accesible. No uses jerga innecesaria.
+- Escribe como un experto en logística que comparte conocimiento real.`
+
+async function generarOutline(tema) {
+  var prompt = `Eres el content manager de invasWMS, un software WMS (Warehouse Management System) 100% en la nube para Latinoamérica.
+
+${INVAS_CONTEXT}
+
+Necesito que generes un OUTLINE (esquema) detallado para un artículo de blog largo (4000+ palabras).
 
 TEMA DEL ARTÍCULO: ${tema.titulo}
 KEYWORDS TARGET: ${tema.keywords}
 TIPO: ${tema.tipo}
 
-INSTRUCCIONES:
-1. Escribe en español profesional pero accesible. No uses jerga innecesaria.
-2. Mínimo 2500 palabras, máximo 3500. Artículos largos y completos.
-3. Estructura con H2 (mínimo 5 secciones) y H3 donde aplique.
-4. Incluye datos concretos, estadísticas del mercado WMS y ejemplos reales.
-5. Menciona invasWMS de forma natural 2-3 veces (no más), como solución relevante.
-6. Incluye links internos como HTML:
-   - <a href="/sistema-de-gestion-de-almacenes-wms/">invasWMS</a>
-   - <a href="/software-logistico-por-industria/software-logistico-para-alimentos/">WMS para alimentos</a>
-   - <a href="/software-logistico-por-industria/software-logistico-para-3pl-y-4pl/">WMS para 3PL</a>
-   - <a href="/contacto-invas/">solicitar una demo</a>
-7. Al final, incluye una sección de conclusión con CTA suave hacia invasWMS.
-8. NO uses frases como "en el vertiginoso mundo", "sinergia", "potenciar", "apalancarse".
-9. Escribe como si fueras un experto en logística que comparte conocimiento.
+INSTRUCCIONES PARA EL OUTLINE:
+1. Genera entre 8 y 10 secciones H2 para el artículo.
+2. Cada sección debe tener 3-5 puntos clave que se desarrollarán.
+3. La ÚLTIMA sección SIEMPRE debe ser "Conclusión" con CTA suave hacia invasWMS.
+4. Incluye datos concretos y estadísticas del mercado WMS en los puntos clave.
+5. Menciona invasWMS de forma natural en 2-3 secciones (no en todas).
+6. Las secciones deben cubrir el tema de forma exhaustiva y profesional.
 
-FORMATO DE RESPUESTA (JSON):
+FORMATO DE RESPUESTA (JSON estricto):
 {
   "titulo_seo": "Título optimizado para Google (max 60 chars)",
   "meta_description": "Meta description (max 155 chars)",
   "slug": "url-amigable-del-articulo",
   "extracto": "Resumen de 2 líneas para el listado del blog",
-  "contenido_html": "<h2>...</h2><p>...</p>...",
   "categoria": "${tema.categoria}",
-  "tags": ["tag1", "tag2", "tag3"]
+  "tags": ["tag1", "tag2", "tag3"],
+  "secciones": [
+    {
+      "h2": "Título de la sección",
+      "puntos": ["punto clave 1", "punto clave 2", "punto clave 3"]
+    }
+  ]
 }
 
-Responde SOLO con el JSON, sin texto adicional.`
+Responde SOLO con JSON válido.`
 
   var res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -200,15 +216,89 @@ Responde SOLO con el JSON, sin texto adicional.`
       model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
-      max_tokens: 6000,
+      max_tokens: 2000,
+      response_format: { type: 'json_object' },
+    })
+  })
+
+  var data = await res.json()
+  var content = data.choices[0].message.content.trim()
+  content = content.replace(/^```json?\n?/, '').replace(/\n?```$/, '')
+  return JSON.parse(content)
+}
+
+async function generarSeccion(tema, outline, seccion, index, total) {
+  var outlineResumen = outline.secciones.map(function(s, i) {
+    return (i + 1) + '. ' + s.h2
+  }).join('\n')
+
+  var prompt = `Eres el content manager de invasWMS. Estás escribiendo la sección ${index + 1} de ${total} de un artículo largo.
+
+${INVAS_CONTEXT}
+
+ARTÍCULO: ${outline.titulo_seo}
+KEYWORDS: ${tema.keywords}
+
+OUTLINE COMPLETO DEL ARTÍCULO (para contexto):
+${outlineResumen}
+
+SECCIÓN A ESCRIBIR AHORA (${index + 1}/${total}):
+H2: ${seccion.h2}
+Puntos clave a desarrollar:
+${seccion.puntos.map(function(p) { return '- ' + p }).join('\n')}
+
+INSTRUCCIONES:
+1. Escribe SOLO esta sección. No repitas contenido de otras secciones.
+2. Escribe entre 400 y 600 palabras para esta sección.
+3. Comienza con el H2 y desarrolla el contenido con H3 donde aplique.
+4. Incluye datos concretos, estadísticas y ejemplos reales donde corresponda.
+5. ${index === total - 1 ? 'Esta es la CONCLUSIÓN. Incluye un CTA suave hacia invasWMS con link a /contacto-invas/' : 'Incluye links internos de invasWMS donde sea natural (no forzar).'}
+
+${STYLE_INSTRUCTIONS}
+
+Responde SOLO con el HTML de esta sección (empezando con <h2>). Sin texto adicional, sin markdown, sin code blocks.`
+
+  var res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 3000,
     })
   })
 
   var data = await res.json()
   var content = data.choices[0].message.content.trim()
   // Limpiar markdown code blocks si los tiene
-  content = content.replace(/^```json?\n?/, '').replace(/\n?```$/, '')
-  return JSON.parse(content)
+  content = content.replace(/^```html?\n?/, '').replace(/\n?```$/, '')
+  return content
+}
+
+function qaArticulo(contenidoHtml, numSecciones) {
+  var charCount = contenidoHtml.length
+  var h2Count = (contenidoHtml.match(/<h2/gi) || []).length
+  var wordEstimate = contenidoHtml.replace(/<[^>]+>/g, '').split(/\s+/).length
+
+  console.log('\n  📊 QA del artículo:')
+  console.log('     Caracteres HTML: ' + charCount)
+  console.log('     Palabras estimadas: ' + wordEstimate)
+  console.log('     Secciones H2: ' + h2Count)
+
+  if (charCount < 20000) {
+    console.log('     ⚠️ ADVERTENCIA: Artículo corto (' + charCount + ' chars < 20000 mínimo)')
+  } else {
+    console.log('     ✅ Largo OK')
+  }
+
+  if (h2Count < 7) {
+    console.log('     ⚠️ ADVERTENCIA: Pocas secciones H2 (' + h2Count + ' < 7 mínimo)')
+  } else {
+    console.log('     ✅ Secciones H2 OK')
+  }
+
+  return { charCount: charCount, h2Count: h2Count, wordEstimate: wordEstimate }
 }
 
 async function obtenerOCrearCategoria(nombre) {
@@ -450,14 +540,48 @@ async function main() {
   console.log('Keywords: ' + tema.keywords)
   console.log('Tipo: ' + tema.tipo)
 
-  // 4. Generar artículo con OpenAI
-  console.log('\nGenerando artículo con GPT-4o...')
-  var articulo = await generarArticulo(tema)
-  console.log('Artículo generado: ' + articulo.titulo_seo)
-  console.log('Slug: ' + articulo.slug)
-  console.log('Largo HTML: ' + (articulo.contenido_html || '').length + ' chars')
+  // 4. Generar outline con OpenAI
+  console.log('\n📋 Paso 1/3: Generando outline con GPT-4o...')
+  var outline = await generarOutline(tema)
+  console.log('Outline generado: ' + outline.titulo_seo)
+  console.log('Slug: ' + outline.slug)
+  console.log('Secciones: ' + outline.secciones.length)
+  outline.secciones.forEach(function(s, i) {
+    console.log('  ' + (i + 1) + '. ' + s.h2 + ' (' + s.puntos.length + ' puntos)')
+  })
 
-  // 5. Publicar en WordPress
+  // 5. Generar cada sección secuencialmente
+  console.log('\n✍️ Paso 2/3: Generando secciones...')
+  var sections = []
+  for (var i = 0; i < outline.secciones.length; i++) {
+    var seccion = outline.secciones[i]
+    console.log('  Sección ' + (i + 1) + '/' + outline.secciones.length + ': ' + seccion.h2 + '...')
+    var html = await generarSeccion(tema, outline, seccion, i, outline.secciones.length)
+    sections.push(html)
+    console.log('    ✅ ' + html.length + ' chars')
+  }
+
+  // 6. Unificar contenido
+  console.log('\n🔗 Paso 3/3: Unificando artículo...')
+  var contenido_html = sections.join('\n\n')
+
+  var articulo = {
+    titulo_seo: outline.titulo_seo,
+    meta_description: outline.meta_description,
+    slug: outline.slug,
+    extracto: outline.extracto,
+    categoria: outline.categoria,
+    tags: outline.tags,
+    contenido_html: contenido_html,
+  }
+
+  console.log('Artículo generado: ' + articulo.titulo_seo)
+  console.log('Largo HTML: ' + articulo.contenido_html.length + ' chars')
+
+  // QA check
+  qaArticulo(articulo.contenido_html, outline.secciones.length)
+
+  // 7. Publicar en WordPress
   console.log('\nPublicando en WordPress...')
   var post = await publicarEnWordPress(articulo)
 
@@ -469,11 +593,11 @@ async function main() {
     console.log('   Título: ' + articulo.titulo_seo)
     console.log('   Categoría: ' + articulo.categoria)
 
-    // 6. Notificar
+    // 8. Notificar
     await notificarEmail(articulo, postUrl)
     console.log('   Email: enviado a contacto@mulleryperez.cl + jvio + cvilo@impruvex.com')
 
-    // 7. Regenerar página /todos-los-articulos/ (ID 6149)
+    // 9. Regenerar página /todos-los-articulos/ (ID 6149)
     console.log('\n   Regenerando página de blog...')
     await regenerarPaginaBlog()
     console.log('   ✅ Página /todos-los-articulos/ actualizada')
