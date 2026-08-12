@@ -127,22 +127,58 @@ async function verificarPublicadoHoy() {
   return Array.isArray(posts) && posts.length > 0
 }
 
-async function obtenerPostsExistentes() {
-  var res = await fetch(WP_URL + '/wp-json/wp/v2/posts?per_page=50&_fields=title,slug', {
-    headers: { 'Authorization': AUTH }
-  })
-  var posts = await res.json()
-  return posts.map(function(p) { return p.title.rendered.toLowerCase() })
+// ═══ NORMALIZE PARA DEDUP ═══
+function normalize(s) {
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim()
 }
 
-function seleccionarTema(existentes) {
-  // Filtrar temas ya publicados
-  var disponibles = TEMAS.filter(function(t) {
-    return !existentes.some(function(e) {
-      return e.includes(t.titulo.substring(0, 30).toLowerCase())
+function similarity(a, b) {
+  a = normalize(a); b = normalize(b)
+  if (a === b) return 1
+  var wordsA = a.split(' '), wordsB = b.split(' ')
+  var common = wordsA.filter(function(w) { return wordsB.includes(w) }).length
+  return common / Math.max(wordsA.length, wordsB.length)
+}
+
+function slugBase(s) {
+  return (s||'').replace(/-20\d{6,8}$/, '').replace(/-\d+$/, '')
+}
+
+async function obtenerPostsExistentes() {
+  var allPosts = []
+  for (var pg = 1; pg <= 3; pg++) {
+    var res = await fetch(WP_URL + '/wp-json/wp/v2/posts?per_page=100&_fields=title,slug&page=' + pg, {
+      headers: { 'Authorization': AUTH }
     })
+    var posts = await res.json()
+    if (!Array.isArray(posts) || !posts.length) break
+    allPosts = allPosts.concat(posts)
+  }
+  return {
+    titles: allPosts.map(function(p) { return p.title.rendered }),
+    slugs: allPosts.map(function(p) { return p.slug })
+  }
+}
+
+function seleccionarTema(existData) {
+  var existTitles = existData.titles
+  var existSlugs = existData.slugs
+  // Filtrar temas ya publicados por similaridad de título > 70%
+  var disponibles = TEMAS.filter(function(t) {
+    // Check título similarity
+    var titleMatch = existTitles.some(function(e) { return similarity(e, t.titulo) > 0.7 })
+    if (titleMatch) return false
+    // Check slug base collision
+    var tSlug = normalize(t.titulo).replace(/ /g, '-')
+    var slugMatch = existSlugs.some(function(s) {
+      return slugBase(s) === slugBase(tSlug) || slugBase(s).indexOf(tSlug.substring(0, 25)) === 0
+    })
+    return !slugMatch
   })
-  if (disponibles.length === 0) disponibles = TEMAS // Si ya se publicaron todos, reiniciar
+  if (disponibles.length === 0) {
+    console.log('⚠️ Todos los temas ya fueron cubiertos. Saltando para evitar duplicados.')
+    return null
+  }
   // Aleatorio
   return disponibles[Math.floor(Math.random() * disponibles.length)]
 }
@@ -531,11 +567,12 @@ async function main() {
   }
 
   // 2. Obtener posts existentes para no repetir
-  var existentes = await obtenerPostsExistentes()
-  console.log('Posts existentes: ' + existentes.length)
+  var existData = await obtenerPostsExistentes()
+  console.log('Posts existentes: ' + existData.titles.length)
 
   // 3. Seleccionar tema
-  var tema = seleccionarTema(existentes)
+  var tema = seleccionarTema(existData)
+  if (!tema) return
   console.log('Tema seleccionado: ' + tema.titulo)
   console.log('Keywords: ' + tema.keywords)
   console.log('Tipo: ' + tema.tipo)
@@ -580,6 +617,16 @@ async function main() {
 
   // QA check
   qaArticulo(articulo.contenido_html, outline.secciones.length)
+
+  // 6b. Verificar que el slug no sea duplicado
+  var slugConflict = existData.slugs.some(function(s) {
+    return s === articulo.slug || slugBase(s) === slugBase(articulo.slug)
+  })
+  if (slugConflict) {
+    var hoy = new Date().toISOString().split('T')[0]
+    articulo.slug = slugBase(articulo.slug) + '-' + hoy.replace(/-/g, '')
+    console.log('  Slug duplicado, ajustado a: ' + articulo.slug)
+  }
 
   // 7. Publicar en WordPress
   console.log('\nPublicando en WordPress...')
