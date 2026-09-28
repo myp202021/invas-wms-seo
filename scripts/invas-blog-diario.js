@@ -1,3 +1,4 @@
+require('./lib/correo') // correos por Gmail (ver scripts/lib/correo.js)
 // invas-blog-diario.js
 // Genera 1 artículo de blog diario para invaswms.com
 // Publica via WordPress REST API
