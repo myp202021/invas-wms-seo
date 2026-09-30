@@ -1,0 +1,16 @@
+name: "Mejoras SEO puntuales (manual)"
+on:
+  workflow_dispatch:
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/mejoras-seo-2026-09-30.js
+        env:
+          INVAS_WP_USER: ${{ secrets.INVAS_WP_USER }}
+          INVAS_WP_APP_PASSWORD: ${{ secrets.INVAS_WP_APP_PASSWORD }}
